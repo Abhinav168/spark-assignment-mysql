@@ -39,13 +39,51 @@ Time taken: 0.099 seconds, Fetched 1 row(s)
 ## Task 3 — SparkSession vs SparkContext
 
 ```
-(paste spark-submit console output here)
+$ docker compose exec spark /opt/spark/bin/spark-submit /opt/spark/scripts/sparkcontext_and_session.py
+SparkSession: <pyspark.sql.session.SparkSession object at 0xffffa10337f0>
+SparkContext: <SparkContext master=local[*] appName=sparkcontext-and-session-demo>
+Spark version: 3.5.1
+App name: sparkcontext-and-session-demo
+Master: local[*]
+Default parallelism: 15
+RDD sum(1..10) = 55
++---+
+|  n|
++---+
+|  1|
+|  2|
+|  3|
+|  4|
+|  5|
+|  6|
+|  7|
+|  8|
+|  9|
+| 10|
++---+
 ```
 
 **Reflection questions:**
 
 1. Why does every SparkSession need a SparkContext underneath it?
+
+   SparkSession is a higher-level facade introduced in Spark 2.0 to unify what
+   used to be separate entry points (SQLContext, HiveContext, StreamingContext).
+   Underneath, it still needs a SparkContext because that's the object that
+   actually talks to the cluster manager (or local threads, in `local[*]`
+   mode), schedules tasks, and tracks RDDs/broadcast variables/accumulators.
+   The DataFrame/SQL API is compiled down to RDD operations by Catalyst under
+   the hood, so there's no way to avoid needing a SparkContext — SparkSession
+   just hides it for the common case.
+
 2. When would you reach for `spark.sparkContext` directly instead of the DataFrame API?
+
+   When I need raw RDD transformations on non-tabular data, custom
+   partitioning control, accumulators for custom counters, or broadcast
+   variables for a small lookup table shared across executors. For nearly
+   all ETL/analytics work (like Task 4), the DataFrame API is the right
+   choice since it's optimized and more concise.
+
 
 ## Task 4 — Library analytics
 
