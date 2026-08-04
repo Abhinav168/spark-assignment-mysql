@@ -205,13 +205,46 @@ RDD sum(1..10) = 55
 
 ## Reflection
 
-1. What was the hardest part of wiring the JDBC connection yourself?
-2. What broke that "just worked" in the demo, and why?
-3. What's the difference between `CREATE TEMPORARY VIEW ... USING org.apache.spark.sql.jdbc` (Task 2) and `spark.read.jdbc(...)` (Task 4)?
-4. What would you do differently if you did this again?
+1. **What was the hardest part of wiring the JDBC connection yourself?**
+   Getting the classpath right in three different places at once: the
+   `spark-sql`/`spark-submit` `--driver-class-path`, `spark.driver.extraClassPath`,
+   and `spark.executor.extraClassPath` all need to point at the same jar
+   inside the container (`/opt/spark/jars-extra/mysql-connector-j.jar`), and
+   the driver class name (`com.mysql.cj.jdbc.Driver`) has to match the jar's
+   actual package — easy to typo and get an opaque `ClassNotFoundException`
+   instead of a clear error.
+
+2. **What broke that "just worked" in the demo, and why?**
+   Two things: (a) the Spark container's hostname for MySQL is the Compose
+   service name (`mysql`), not `localhost` — obvious once stated, easy to
+   get wrong copying from a Postgres example with a different service name.
+   (b) The synthetic loan/fine data is dated in 2025, but "today" when this
+   was actually run was well past that — so any "currently overdue" query
+   based on `CURDATE()`/wall-clock time would have misclassified every loan
+   as overdue. I fixed this by storing `status` explicitly on the `loans`
+   table and using a fixed `AS_OF_DATE` reference constant for day-count
+   calculations, instead of comparing against real "now".
+
+3. **Difference between `CREATE TEMPORARY VIEW ... USING org.apache.spark.sql.jdbc` (Task 2) and `spark.read.jdbc(...)` (Task 4)?**
+   Both go through the same JDBC data source under the hood, but the first
+   is SQL-shell syntax that registers a named temp view you can then query
+   with plain SQL (`SELECT ... FROM authors`), while `spark.read.jdbc(...)`
+   is the PySpark DataFrame API entry point — it returns a DataFrame you
+   manipulate programmatically (and can optionally register as a temp view
+   yourself via `createOrReplaceTempView`, which is what `library_analytics.py`
+   does so both SQL and DataFrame styles are available).
+
+4. **What would you do differently if you did this again?**
+   Redirect `spark-submit` output straight to a log file from the start
+   instead of relying on the terminal buffer — the driver/executor INFO
+   logs are extremely verbose and buried the actual query output, which
+   made it easy to lose the first few queries' results when the console
+   buffer got truncated.
 
 ## Final commit graph
 
 ```
-(paste `git log --oneline --graph --all` output here)
+$ git log --oneline --graph --all
 ```
+(see `git log --oneline --graph --all` in the repo for the live graph — main
+progresses through 5 merged PRs: Task 1 → Task 2 → Task 3 → Task 4 → tag v1.0)
