@@ -18,7 +18,22 @@ $ docker compose exec mysql mysql -u spark -pspark library -e "SHOW TABLES;"
 ## Task 2 — Spark SQL over JDBC
 
 ```
-(paste SHOW TABLES / COUNT(*) output here)
+$ docker compose exec spark /opt/spark/bin/spark-sql \
+    --driver-class-path /opt/spark/jars-extra/mysql-connector-j.jar \
+    --conf spark.executor.extraClassPath=/opt/spark/jars-extra/mysql-connector-j.jar \
+    --conf spark.driver.extraClassPath=/opt/spark/jars-extra/mysql-connector-j.jar \
+    -f /opt/spark/scripts/task2_views.sql
+...
+authors
+books
+fines
+loans
+members
+Time taken: 0.446 seconds, Fetched 5 row(s)
+10
+Time taken: 0.517 seconds, Fetched 1 row(s)
+20
+Time taken: 0.099 seconds, Fetched 1 row(s)
 ```
 
 ## Task 3 — SparkSession vs SparkContext
