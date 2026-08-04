@@ -1,0 +1,32 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: library
+      MYSQL_USER: spark
+      MYSQL_PASSWORD: spark
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./data/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpw"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  spark:
+    image: apache/spark:3.5.1
+    user: root
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./jars:/opt/spark/jars-extra
+      - ./scripts:/opt/spark/scripts
+    command: ["tail", "-f", "/dev/null"]
+
+volumes:
+  mysql_data:
