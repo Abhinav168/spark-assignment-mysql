@@ -245,6 +245,22 @@ RDD sum(1..10) = 55
 
 ```
 $ git log --oneline --graph --all
+* 028c1c2 (HEAD -> main, origin/main, origin/HEAD) Complete reflection section
+*   d6c651e Merge pull request #4 from Abhinav168/task-4-library-analytics
+|\
+| * b2f5aab (origin/task-4-library-analytics) Task 4: 7 library analytics queries
+|/
+*   4d4f347 Merge pull request #3 from Abhinav168/task-3-spark-session-context
+|\
+| * 5eff93b (origin/task-3-spark-session-context) Task 3: SparkSession vs SparkContext demo + reflection
+|/
+*   f46f6f0 Merge pull request #2 from Abhinav168/task-2-spark-sql
+|\
+| * 03cdda5 (origin/task-2-spark-sql) Task 2: Spark SQL JDBC temp views over MySQL
+|/
+*   2e4489e Merge pull request #1 from Abhinav168/task-1-docker-setup
+|\
+| * fc54fdb (origin/task-1-docker-setup) Task 1: MySQL + Spark stack running via Docker Compose
+|/
+* d23bcf2 Initial assignment prompt
 ```
-(see `git log --oneline --graph --all` in the repo for the live graph — main
-progresses through 5 merged PRs: Task 1 → Task 2 → Task 3 → Task 4 → tag v1.0)
