@@ -84,10 +84,27 @@ Labelled statuses: [('pending', 'needs follow-up'), ('overdue', 'urgent'), ('ret
 
 ## Task 4 — Library analytics
 
+```
+$ docker compose exec spark /opt/spark/bin/spark-submit \
+    --driver-class-path /opt/spark/jars-extra/mysql-connector-j.jar \
+    --jars /opt/spark/jars-extra/mysql-connector-j.jar \
+    /opt/spark/scripts/library_analytics.py
+Registered temp view 'authors' with 10 rows
+Registered temp view 'books' with 20 rows
+Registered temp view 'members' with 15 rows
+Registered temp view 'loans' with 40 rows
+Registered temp view 'fines' with 14 rows
+```
+
+> Note: the worked example as originally given referenced a `paid_at` column
+> and lowercase `status = 'paid'`, but the actual seeded schema
+> (`data/seed.sql`) uses `paid_date` and an uppercase `PAID`/`UNPAID` enum —
+> fixed that mismatch before writing the remaining queries.
+
 ### 1. Fines collected by month
 ```
 +-------+---------------+----------+
-|  month|total_collected|fines_paid|
+|  month|total_collected|fine_count|
 +-------+---------------+----------+
 |2025-01|           2.50|         1|
 |2025-02|           3.00|         1|
@@ -103,15 +120,15 @@ Labelled statuses: [('pending', 'needs follow-up'), ('overdue', 'urgent'), ('ret
 |        name|  country|total_loans|active_loans|overdue_loans|
 +------------+---------+-----------+------------+-------------+
 | Alice Smith|      USA|          3|           0|            0|
-| Frank Brown|      USA|          3|           0|            0|
-| Carol White|   Canada|          3|           0|            0|
-|   Eva Green|    India|          3|           0|            0|
-|    Ivy Chen|    India|          3|           1|            1|
-|   David Lee|Australia|          3|           0|            1|
-|Henry Wilson|   Canada|          3|           1|            0|
-|   Grace Kim|       UK|          3|           1|            0|
-|  Jack Davis|      USA|          3|           1|            0|
 |   Bob Jones|       UK|          3|           0|            1|
+| Carol White|   Canada|          3|           0|            0|
+|   David Lee|Australia|          3|           0|            1|
+|   Eva Green|    India|          3|           0|            0|
+| Frank Brown|      USA|          3|           0|            0|
+|   Grace Kim|       UK|          3|           1|            0|
+|Henry Wilson|   Canada|          3|           1|            0|
+|    Ivy Chen|    India|          3|           1|            1|
+|  Jack Davis|      USA|          3|           1|            0|
 +------------+---------+-----------+------------+-------------+
 ```
 
@@ -140,7 +157,8 @@ Labelled statuses: [('pending', 'needs follow-up'), ('overdue', 'urgent'), ('ret
 
 ### 5. Currently overdue report
 ```
-(days_overdue computed against fixed AS_OF_DATE = 2025-07-15)
+(days_overdue computed against fixed AS_OF_DATE = 2025-07-15, per data/seed.sql,
+instead of wall-clock CURDATE() — the synthetic loan data is dated in 2025)
 +-------+-----------+----------------------------------------+----------+------------+
 |loan_id|member_name|book_title                              |due_date  |days_overdue|
 +-------+-----------+----------------------------------------+----------+------------+
@@ -166,20 +184,20 @@ Labelled statuses: [('pending', 'needs follow-up'), ('overdue', 'urgent'), ('ret
 
 ### 7. Most borrowed books (top 10)
 ```
-+---+----------------------------+--------------+
-|id |title                       |times_borrowed|
-+---+----------------------------+--------------+
-|1  |1984                        |2             |
-|2  |Animal Farm                 |2             |
-|3  |Foundation                  |2             |
-|4  |I, Robot                    |2             |
-|5  |Murder on the Orient Express|2             |
-|6  |And Then There Were None    |2             |
-|7  |Americanah                  |2             |
-|8  |Half of a Yellow Sun        |2             |
-|9  |Norwegian Wood              |2             |
-|10 |Kafka on the Shore          |2             |
-+---+----------------------------+--------------+
++-------------------------------------+----------------------+--------------+
+|title                                |author_name           |times_borrowed|
++-------------------------------------+----------------------+--------------+
+|Oryx and Crake                       |Margaret Atwood       |2             |
+|1984                                 |George Orwell         |2             |
+|Harry Potter and the Sorcerer's Stone|J.K. Rowling          |2             |
+|Animal Farm                          |George Orwell         |2             |
+|Foundation                           |Isaac Asimov          |2             |
+|One Hundred Years of Solitude        |Gabriel Garcia Marquez|2             |
+|Song of Solomon                      |Toni Morrison         |2             |
+|Norwegian Wood                       |Haruki Murakami       |2             |
+|Murder on the Orient Express         |Agatha Christie       |2             |
+|Sapiens                              |Yuval Noah Harari     |2             |
++-------------------------------------+----------------------+--------------+
 ```
 
 ### 8. Monthly loan volume by status
