@@ -260,7 +260,10 @@ instead of wall-clock CURDATE() — the synthetic loan data is dated in 2025)
 
 ```
 $ git log --oneline --graph --all
-* 028c1c2 (HEAD -> main, origin/main, origin/HEAD) Complete reflection section
+* 80c82ec (HEAD -> main, tag: v1.0, origin/main, origin/HEAD) Task 4: 7 library analytics queries
+* 4f45459 Task 3: SparkSession vs SparkContext demo + reflection
+* 3cd00e9 Add final commit graph to ANSWERS.md
+* 028c1c2 Complete reflection section
 *   d6c651e Merge pull request #4 from Abhinav168/task-4-library-analytics
 |\
 | * b2f5aab (origin/task-4-library-analytics) Task 4: 7 library analytics queries
@@ -279,3 +282,10 @@ $ git log --oneline --graph --all
 |/
 * d23bcf2 Initial assignment prompt
 ```
+
+> Note: after the assignment's starter files were refreshed mid-submission,
+> Task 3 and Task 4 were redone directly on top of `main` (commits `4f45459`
+> and `80c82ec`) and merged straight in rather than via separate PR branches,
+> since the branches from the original PRs (`task-3-spark-session-context`,
+> `task-4-library-analytics`) had already been merged once. The `v1.0` tag was
+> moved to `80c82ec` to mark the actual final state.
