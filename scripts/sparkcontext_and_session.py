@@ -1,57 +1,71 @@
 """
-Task 3 — SparkSession vs SparkContext.
+Task 3 starter — SparkSession vs SparkContext
 
-Goal: understand that SparkSession is the modern entry point (DataFrames/SQL),
-while SparkContext (`spark.sparkContext`) is the lower-level handle that
-RDDs, accumulators, and broadcast variables actually run on.
+Run this with:
+  docker compose exec spark /opt/spark/bin/spark-submit /opt/spark/scripts/sparkcontext_and_session.py
+
+Goal: understand the relationship between SparkSession and SparkContext before
+you touch any real data. Fill in every TODO. Do not delete the print()
+statements — they are your proof-of-work for this task.
 """
 
 from pyspark.sql import SparkSession
 
-# TODO 1 (code): create a SparkSession named "sparkcontext-and-session-demo",
-# running locally with all available cores.
+# ---------------------------------------------------------------------------
+# 1. SparkSession — the modern, unified entry point (DataFrames, SQL, streaming)
+# ---------------------------------------------------------------------------
 spark = (
-    SparkSession.builder.appName("sparkcontext-and-session-demo")
+    SparkSession.builder
+    .appName("spark-101-assignment")
     .master("local[*]")
+    .config("spark.jars", "/opt/spark/jars-extra/mysql-connector-j.jar")
     .getOrCreate()
 )
 
-# Every SparkSession wraps a SparkContext.
+print(f"Spark version: {spark.version}")
+print(f"App name (via SparkSession): {spark.conf.get('spark.app.name')}")
+
+# ---------------------------------------------------------------------------
+# 2. SparkContext — the original, lower-level entry point.
+#    Every SparkSession wraps exactly one SparkContext. RDD operations,
+#    accumulators, and broadcast variables all go through it.
+# ---------------------------------------------------------------------------
 sc = spark.sparkContext
-print(f"SparkSession: {spark}")
-print(f"SparkContext: {sc}")
-print(f"Spark version: {sc.version}")
-print(f"App name: {sc.appName}")
-print(f"Master: {sc.master}")
+
+print(f"SparkContext master: {sc.master}")
+print(f"SparkContext app name: {sc.appName}")
 print(f"Default parallelism: {sc.defaultParallelism}")
 
-# TODO 2 (code): use the SparkContext directly to build an RDD from a Python
-# list of numbers 1..10, then compute and print its sum using RDD operations
-# (not a DataFrame).
-numbers_rdd = sc.parallelize(range(1, 11))
-total = numbers_rdd.sum()
-print(f"RDD sum(1..10) = {total}")
+# TODO 1: Use sc.parallelize(...) to create an RDD from a Python list of the
+# numbers 1-20, then use .filter() and .map() to compute the squares of the
+# even numbers. Collect and print the result.
+even_squares = sc.parallelize(range(1, 21)).filter(lambda n: n % 2 == 0).map(lambda n: n * n).collect()
+print(f"Even squares: {even_squares}")
 
-# Also show the same numbers as a DataFrame, built via SparkSession, to
-# contrast the two APIs operating on the same underlying SparkContext.
-df = spark.createDataFrame([(n,) for n in range(1, 11)], ["n"])
-df.show()
 
-# TODO 3 (reflection, in your own words): why does every SparkSession need a
-# SparkContext underneath it, and when (if ever) would you reach for
-# `spark.sparkContext` directly instead of just using the DataFrame API?
+# TODO 2: Create a broadcast variable containing a small dict, e.g.
+# {"pending": "needs follow-up", "overdue": "urgent", "returned": "closed"}.
+# Use it inside an RDD .map() to label a list of loan statuses, then collect
+# and print the labelled result.
+status_lookup = sc.broadcast({"pending": "needs follow-up", "overdue": "urgent", "returned": "closed"})
+labelled = sc.parallelize(["pending", "overdue", "returned"]).map(lambda s: (s, status_lookup.value.get(s))).collect()
+print(f"Labelled statuses: {labelled}")
+
+
+# TODO 3: In 2-3 lines of code comments (not prose in the README — actual
+# comments right here), explain in your own words:
+#   a) What does spark.stop() actually shut down — the session, the context,
+#      or both?
+#   b) Could you create a second SparkSession in the same JVM process while
+#      this one is still running? What would spark.sparkContext point to if
+#      you did?
 #
-# Reflection: SparkSession is a higher-level wrapper that unifies what used
-# to be separate contexts (SQLContext, HiveContext, StreamingContext) on top
-# of a single SparkContext, which is the actual connection to the cluster
-# (or local executors) that schedules tasks, tracks RDDs, and manages
-# accumulators/broadcast variables. The DataFrame/SQL API you get from
-# SparkSession is built on RDDs under the hood and is optimized by Catalyst/
-# Tungsten, so for almost all day-to-day ETL and analytics work you should
-# stay on the DataFrame API. You'd reach for `spark.sparkContext` directly
-# when you need something the DataFrame API doesn't expose: raw RDD
-# transformations on unstructured/non-tabular data, custom partitioning
-# logic, accumulators for custom metrics, or broadcast variables for small
-# lookup data shared across executors.
+# a) spark.stop() shuts down both: it stops the underlying SparkContext (which
+#    tears down executors/tasks and releases cluster resources), and the
+#    SparkSession that wraps it becomes unusable since it has no context left.
+# b) Yes — SparkSession.builder.getOrCreate() would just hand back the same
+#    underlying SparkContext (only one SparkContext is allowed per JVM), so
+#    spark.sparkContext on the "second" session would point to the exact same
+#    SparkContext object as the first, not a new one.
 
 spark.stop()

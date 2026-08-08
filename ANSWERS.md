@@ -40,27 +40,13 @@ Time taken: 0.099 seconds, Fetched 1 row(s)
 
 ```
 $ docker compose exec spark /opt/spark/bin/spark-submit /opt/spark/scripts/sparkcontext_and_session.py
-SparkSession: <pyspark.sql.session.SparkSession object at 0xffffa10337f0>
-SparkContext: <SparkContext master=local[*] appName=sparkcontext-and-session-demo>
 Spark version: 3.5.1
-App name: sparkcontext-and-session-demo
-Master: local[*]
+App name (via SparkSession): spark-101-assignment
+SparkContext master: local[*]
+SparkContext app name: spark-101-assignment
 Default parallelism: 15
-RDD sum(1..10) = 55
-+---+
-|  n|
-+---+
-|  1|
-|  2|
-|  3|
-|  4|
-|  5|
-|  6|
-|  7|
-|  8|
-|  9|
-| 10|
-+---+
+Even squares: [4, 16, 36, 64, 100, 144, 196, 256, 324, 400]
+Labelled statuses: [('pending', 'needs follow-up'), ('overdue', 'urgent'), ('returned', 'closed')]
 ```
 
 **Reflection questions:**
@@ -78,11 +64,22 @@ RDD sum(1..10) = 55
 
 2. When would you reach for `spark.sparkContext` directly instead of the DataFrame API?
 
-   When I need raw RDD transformations on non-tabular data, custom
+   When I need raw RDD transformations on non-tabular data (like the even-squares
+   filter/map or the broadcast-variable status lookup above), custom
    partitioning control, accumulators for custom counters, or broadcast
    variables for a small lookup table shared across executors. For nearly
    all ETL/analytics work (like Task 4), the DataFrame API is the right
    choice since it's optimized and more concise.
+
+3. `spark.stop()` and multiple sessions (from the in-code TODO 3 comments):
+
+   `spark.stop()` shuts down both — it stops the underlying `SparkContext`
+   (tearing down executors and releasing cluster resources), which leaves the
+   wrapping `SparkSession` unusable since it has nothing left to run on. A
+   second `SparkSession.builder.getOrCreate()` call in the same JVM would not
+   create a new `SparkContext` — only one is allowed per JVM — so
+   `spark.sparkContext` on that "second" session would just point to the same
+   underlying `SparkContext` as the first.
 
 
 ## Task 4 — Library analytics
