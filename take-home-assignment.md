@@ -45,7 +45,7 @@ about *why* it worked before it works here.
 2. Clone your fork locally:
 
    ```bash
-   git clone https://github.com/<your-username>/spark-101-assignment.git
+   git clone https://github.com/<your-username>/spark-101.git spark-101-assignment
    cd spark-101-assignment
    ```
 
